@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SELF POLISH — 自己磨きトラッカー</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --gold: #c9a84c;
+    --gold-dim: #7a6330;
+    --text: #e8e4dc;
+    --text-muted: #6a6560;
+    --text-dim: #3a3632;
+    --green: #4a7c5a;
+    --green-bright: #6db380;
+    --red-dim: #6a3030;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 36px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .header-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .header-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .header-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .header-date {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+  .header-streak {
+    position: absolute;
+    right: 24px;
+    top: 36px;
+    text-align: right;
+  }
+  .streak-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .streak-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .progress-bar-wrap {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+  .progress-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: var(--gold);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    padding: 0 24px;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 12px 16px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+  }
+  .tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── CONTENT ── */
+  .content {
+    padding: 0 0 20px;
+  }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── TODAY VIEW ── */
+  .category-block {
+    margin: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .category-header {
+    padding: 14px 24px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cat-icon {
+    font-size: 14px;
+    width: 22px;
+    text-align: center;
+  }
+  .cat-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    color: var(--text);
+    flex: 1;
+  }
+  .cat-count {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  .habit-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 24px 10px 56px;
+    gap: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .habit-item:active { background: var(--surface); }
+
+  .check-box {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .check-box.done {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .check-box.done::after {
+    content: '';
+    width: 10px;
+    height: 6px;
+    border-left: 1.5px solid #fff;
+    border-bottom: 1.5px solid #fff;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+
+  .habit-text {
+    flex: 1;
+  }
+  .habit-name {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+  .habit-item.done .habit-name {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--text-dim);
+  }
+  .habit-freq {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+  }
+  .habit-detail {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    line-height: 1.5;
+    letter-spacing: 0.03em;
+  }
+  .habit-item.done .habit-detail {
+    color: var(--text-dim);
+  }
+  .habit-streak-badge {
+    font-size: 10px;
+    color: var(--gold-dim);
+    letter-spacing: 0.05em;
+  }
+  .habit-streak-badge.hot {
+    color: var(--gold);
+  }
+
+  /* ── WEEK VIEW ── */
+  .week-view {
+    padding: 16px 0;
+  }
+  .week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px 16px;
+  }
+  .week-nav-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .week-nav-btn:active { background: var(--surface2); }
+  .week-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  .week-grid {
+    padding: 0 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .week-grid::-webkit-scrollbar { display: none; }
+  .week-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 320px;
+  }
+  .week-table th {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    padding: 4px 6px;
+    text-align: center;
+  }
+  .week-table th.today-col { color: var(--gold); }
+  .week-table td {
+    padding: 3px 4px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .week-habit-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: left;
+    padding-right: 8px;
+    white-space: nowrap;
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .week-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+  .week-dot.done { background: var(--green); color: #fff; }
+  .week-dot.miss { background: var(--surface2); color: var(--text-dim); }
+  .week-dot.future { background: transparent; border: 1px solid var(--border); }
+  .week-dot.today-dot { border: 1px solid var(--gold-dim); }
+
+  /* ── YEAR VIEW ── */
+  .year-view { padding: 16px 0; }
+  .year-cat-select {
+    padding: 0 24px 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .year-cat-select::-webkit-scrollbar { display: none; }
+  .year-cat-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .year-cat-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.07);
+  }
+
+  .year-habit-section { padding: 0 24px 24px; }
+  .year-habit-title {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .heatmap {
+    display: grid;
+    grid-template-columns: repeat(53, 1fr);
+    gap: 2px;
+  }
+  .hm-cell {
+    aspect-ratio: 1;
+    border-radius: 1px;
+    background: var(--surface2);
+  }
+  .hm-cell.lv1 { background: #2a4a34; }
+  .hm-cell.lv2 { background: #3a6547; }
+  .hm-cell.lv3 { background: var(--green); }
+  .hm-cell.lv4 { background: var(--green-bright); }
+  .hm-month-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0 0;
+  }
+  .hm-month-lbl {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── SETTINGS ── */
+  .settings-view { padding: 16px 24px; }
+  .settings-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin: 20px 0 10px;
+    text-transform: uppercase;
+  }
+  .settings-section-title:first-child { margin-top: 0; }
+  .habit-edit-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .habit-edit-item:last-child { border-bottom: none; }
+  .habit-edit-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .habit-edit-freq {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .edit-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .add-habit-btn {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed var(--border);
+    background: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+  }
+  .add-habit-btn:active { background: var(--surface2); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    padding: 24px 24px 40px;
+    width: 100%;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  .modal-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-bottom: 12px;
+    outline: none;
+  }
+  .modal-input:focus { border-color: var(--gold-dim); }
+  .modal-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    outline: none;
+    appearance: none;
+  }
+  .modal-btns { display: flex; gap: 10px; }
+  .btn-primary {
+    flex: 1;
+    background: var(--gold);
+    color: #0e0e0e;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+  .btn-cancel {
+    flex: 1;
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn-delete {
+    background: none;
+    color: var(--red-dim);
+    border: 1px solid var(--red-dim);
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── MED VIEW ── */
+  .med-view { padding: 20px 24px; }
+  .med-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 24px; }
+  .med-metric { background: var(--surface2); border-radius: 8px; padding: 12px 14px; }
+  .med-metric-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.08em; margin-bottom: 4px; }
+  .med-metric-value { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; color: var(--text); }
+  .med-metric-value.warn { color: #c9a84c; }
+  .med-metric-value.danger { color: #b05050; }
+  .med-legend { display: flex; gap: 14px; margin-bottom: 16px; }
+  .med-legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-muted); letter-spacing: 0.05em; }
+  .med-legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .med-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .med-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .med-status-bar { width: 3px; height: 44px; border-radius: 2px; flex-shrink: 0; }
+  .bar-ok   { background: #4a7c5a; }
+  .bar-warn { background: #c9a84c; }
+  .bar-over { background: #b05050; }
+  .med-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .med-card-body { flex: 1; min-width: 0; }
+  .med-card-name { font-size: 13px; color: var(--text); line-height: 1.3; }
+  .med-card-meta { font-size: 10px; color: var(--text-muted); margin-top: 3px; letter-spacing: 0.03em; }
+  .med-card-right { text-align: right; flex-shrink: 0; }
+  .med-days { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; line-height: 1; }
+  .days-ok   { color: var(--green-bright); }
+  .days-warn { color: var(--gold); }
+  .days-over { color: #b05050; }
+  .med-next { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+  .med-done-btn { margin-top: 6px; background: none; border: 1px solid var(--border); color: var(--text-muted); font-size: 10px; padding: 3px 9px; border-radius: 4px; cursor: pointer; letter-spacing: 0.05em; transition: all 0.2s; }
+  .med-done-btn:active { background: var(--surface2); }
+  .med-timeline-section { margin-top: 4px; }
+  .med-tl-title { font-family: 'Cormorant Garamond', serif; font-size: 13px; letter-spacing: 0.12em; color: var(--gold); margin-bottom: 14px; }
+  .med-tl-row { margin-bottom: 10px; }
+  .med-tl-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .med-tl-bar-wrap { height: 24px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
+  .med-tl-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 400; min-width: 32px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+  .tl-ok   { background: #1a3d28; color: var(--green-bright); }
+  .tl-warn { background: #3d3010; color: var(--gold); }
+  .tl-over { background: #3d1a1a; color: #e07070; }
+  .med-tl-date { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--text-muted); }
+
+  /* Med history dots */
+  .med-history-section { margin-top: 4px; }
+  .med-dot-grid { overflow-x: auto; scrollbar-width: none; }
+  .med-dot-grid::-webkit-scrollbar { display: none; }
+  .med-dot-row-header, .med-dot-row {
+    display: grid;
+    grid-template-columns: 22px repeat(12, 1fr);
+    gap: 3px;
+    margin-bottom: 3px;
+    min-width: 260px;
+  }
+  .med-dot-item-label {
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .med-dot-month {
+    font-size: 9px; color: var(--text-muted);
+    text-align: center; letter-spacing: 0;
+    padding: 2px 0;
+  }
+  .med-dot-month-current { color: var(--gold); }
+  .med-dot-cell {
+    display: flex; align-items: center; justify-content: center;
+    height: 20px;
+  }
+  .med-dot-done {
+    width: 12px; height: 12px; border-radius: 3px;
+    background: var(--green);
+  }
+  .med-dot-empty {
+    width: 12px; height: 12px; border-radius: 3px;
+    background: var(--surface2);
+  }
+  .med-dot-future {
+    width: 12px; height: 12px; border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  /* Med modal */
+  .med-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px); z-index: 100; display: none; align-items: flex-end;
+  }
+  .med-modal-overlay.open { display: flex; }
+  .med-modal {
+    background: var(--surface); border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0; padding: 24px 24px 40px; width: 100%;
+    animation: slideUp 0.25s ease;
+  }
+
+  /* Scroll handle */
+  .pill {
+    width: 36px; height: 3px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 20px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-label">Self Polish</div>
+  <div class="header-title">自己磨き<br><em>Tracker</em></div>
+  <div class="header-date" id="headerDate"></div>
+  <div class="header-streak">
+    <div class="streak-num" id="streakCount">0</div>
+    <div class="streak-label">Day Streak</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-section">
+  <div class="progress-row">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-text" id="progressText">0/0</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('today',this)">TODAY</button>
+  <button class="tab" onclick="switchTab('week',this)">WEEK</button>
+  <button class="tab" onclick="switchTab('year',this)">YEAR</button>
+  <button class="tab" onclick="switchTab('med',this)">MED</button>
+  <button class="tab" onclick="switchTab('settings',this)">EDIT</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TODAY -->
+  <div class="view active" id="view-today">
+    <div id="todayList"></div>
+  </div>
+
+  <!-- WEEK -->
+  <div class="view" id="view-week">
+    <div class="week-view">
+      <div class="week-nav">
+        <button class="week-nav-btn" onclick="shiftWeek(-1)">‹</button>
+        <div class="week-title" id="weekTitle"></div>
+        <button class="week-nav-btn" onclick="shiftWeek(1)">›</button>
+      </div>
+      <div class="week-grid">
+        <table class="week-table" id="weekTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- YEAR -->
+  <div class="view" id="view-year">
+    <div class="year-view">
+      <div class="year-cat-select" id="yearCatSelect"></div>
+      <div id="yearHeatmaps"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="settings-view" id="settingsList"></div>
+  </div>
+
+  <!-- MED -->
+  <div class="view" id="view-med">
+    <div class="med-view" id="medView"></div>
+  </div>
+
+</div>
+
+<!-- MODAL: Add/Edit Habit -->
+<div class="modal-overlay" id="habitModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="pill"></div>
+    <div class="modal-title" id="modalTitle">新しい習慣を追加</div>
+    <input class="modal-input" id="modalHabitName" placeholder="習慣名（例：腹筋30回）">
+    <input class="modal-input" id="modalHabitDetail" placeholder="詳細・目安（例：30回×2セット／約3分）" style="font-size:12px">
+    <select class="modal-select" id="modalCat">
+      <option value="">カテゴリを選択</option>
+    </select>
+    <select class="modal-select" id="modalFreq">
+      <option value="daily">毎日</option>
+      <option value="weekday">平日のみ</option>
+      <option value="weekend">週末のみ</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn-delete" id="modalDeleteBtn" onclick="deleteHabit()" style="display:none">削除</button>
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveHabit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: Med visit done -->
+<div class="med-modal-overlay" id="medModal" onclick="closeMedModal(event)">
+  <div class="med-modal">
+    <div class="pill"></div>
+    <div class="modal-title" id="medModalTitle">受診日を記録</div>
+    <input class="modal-input" type="date" id="medModalDate">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeMedModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveMedVisit()">記録する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────
+const CATEGORIES = [
+  { id: 'posture',  name: '姿勢',  icon: '🧍' },
+  { id: 'core',     name: '体幹',  icon: '🔥' },
+  { id: 'fashion',  name: '服装',  icon: '👔' },
+  { id: 'strength', name: '筋力',  icon: '💪' },
+  { id: 'beauty',   name: '美容',  icon: '✨' },
+];
+
+const DEFAULT_HABITS = [
+  // 🧍 姿勢
+  { id: 'h1',  cat: 'posture',  name: '壁立ち5点チェック',            detail: '後頭部・両肩・お尻・かかとを壁に付けて1〜2分キープ', freq: 'daily' },
+  { id: 'h2',  cat: 'posture',  name: '肩甲骨タオル上げ下げ',         detail: 'タオルを肩幅で持ち頭の後ろを通す×10回 ／ 約2分', freq: 'daily' },
+  { id: 'h3',  cat: 'posture',  name: '肩甲骨寄せストレッチ',         detail: '両肩を後ろに引き肩甲骨を中央に寄せ深呼吸×5回 ／ 約1分', freq: 'daily' },
+  { id: 'h4',  cat: 'posture',  name: '姿勢セルフ写真チェック',        detail: '週1回横から撮影して先週と比較（スマホで30秒）', freq: 'weekend' },
+  // 🔥 体幹
+  { id: 'h5',  cat: 'core',     name: 'プランク',                     detail: '60秒×1〜2セット ／ 肩・腹・かかとを一直線に', freq: 'daily' },
+  { id: 'h6',  cat: 'core',     name: 'ヒップリフト',                  detail: '20回×1〜2セット ／ お尻を締めて肩〜膝を一直線に', freq: 'daily' },
+  { id: 'h7',  cat: 'core',     name: '腹式呼吸',                     detail: '鼻から4秒吸い・口から8秒吐く×10回 ／ 約2分', freq: 'daily' },
+  // 💪 筋力
+  { id: 'h8',  cat: 'strength', name: 'スクワット',                   detail: '30回×2セット ／ 太もも・姿勢安定の土台', freq: 'daily' },
+  { id: 'h9',  cat: 'strength', name: '腕立て伏せ',                   detail: '20回×2セット ／ スーツのハリ・大胸筋', freq: 'daily' },
+  { id: 'h10', cat: 'strength', name: '腹筋（クランチ）',              detail: '30回×2セット ／ 引き締まった体幹・姿勢維持', freq: 'daily' },
+  // 👔 服装
+  { id: 'h11', cat: 'fashion',  name: '全身鏡チェック（朝）',          detail: '髪・眉・ひげ・服のシワ・靴を確認 ／ 約1分', freq: 'daily' },
+  { id: 'h12', cat: 'fashion',  name: '靴磨き・靴のメンテ',            detail: '週1回ブラシがけ or クリーム塗布 ／ 約5分', freq: 'weekend' },
+  { id: 'h13', cat: 'fashion',  name: '服の状態チェック・アイロン',    detail: '週1回シミ・ほつれ・シワ確認・必要分アイロン', freq: 'weekend' },
+  // ✨ 美容
+  { id: 'h14', cat: 'beauty',   name: '洗顔・保湿（朝）',              detail: '泡立て洗顔→化粧水→乳液→日焼け止め ／ 約3分', freq: 'daily' },
+  { id: 'h15', cat: 'beauty',   name: '洗顔・保湿（夜）',              detail: '泡立て洗顔→化粧水→乳液 ／ 約2分', freq: 'daily' },
+  { id: 'h16', cat: 'beauty',   name: '眉毛を整える',                  detail: '眉用シェーバーで毎週整える ／ 約3分', freq: 'weekend' },
+  { id: 'h17', cat: 'beauty',   name: '爪・鼻毛・耳毛チェック',        detail: '週1回まとめてケア ／ 約5分', freq: 'weekend' },
+  { id: 'h18', cat: 'beauty',   name: '歯のホワイトニングケア',         detail: '週1〜2回ホワイトニング歯磨き or マウスウォッシュ', freq: 'weekend' },
+];
+
+// ─── STATE ──────────────────────────────────────────────
+let state = loadState();
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('selfpolish_v3');
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return {
+    habits: JSON.parse(JSON.stringify(DEFAULT_HABITS)),
+    records: {},  // { 'YYYY-MM-DD': { habitId: true/false, ... } }
+    weekOffset: 0,
+    yearCat: 'posture',
+  };
+}
+function saveState() {
+  try { localStorage.setItem('selfpolish_v3', JSON.stringify(state)); } catch(e) {}
+}
+
+// ─── DATE UTILS ─────────────────────────────────────────
+function today() {
+  const d = new Date();
+  return fmtDate(d);
+}
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function parseDate(s) {
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function addDays(dateStr, n) {
+  const d = parseDate(dateStr);
+  d.setDate(d.getDate() + n);
+  return fmtDate(d);
+}
+function getWeekDays(offset=0) {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1) + offset * 7);
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + i);
+    return fmtDate(d);
+  });
+}
+function isApplicable(habit, dateStr) {
+  const d = parseDate(dateStr);
+  const dow = d.getDay();
+  if (habit.freq === 'weekday') return dow >= 1 && dow <= 5;
+  if (habit.freq === 'weekend') return dow === 0 || dow === 6;
+  return true;
+}
+function isDone(habitId, dateStr) {
+  return !!(state.records[dateStr] && state.records[dateStr][habitId]);
+}
+
+// ─── STREAK ─────────────────────────────────────────────
+function calcStreak() {
+  let streak = 0;
+  let date = today();
+  while (true) {
+    const habits = state.habits.filter(h => isApplicable(h, date));
+    if (habits.length === 0) break;
+    const done = habits.filter(h => isDone(h.id, date));
+    if (done.length === 0 && date === today()) {
+      date = addDays(date, -1);
+      continue;
+    }
+    if (done.length < Math.ceil(habits.length * 0.5)) break;
+    streak++;
+    date = addDays(date, -1);
+    if (streak > 365) break;
+  }
+  return streak;
+}
+
+function habitStreak(habitId) {
+  let streak = 0;
+  let date = addDays(today(), -1);
+  for (let i = 0; i < 365; i++) {
+    if (!isDone(habitId, date)) break;
+    streak++;
+    date = addDays(date, -1);
+  }
+  return streak;
+}
+
+// ─── TODAY VIEW ─────────────────────────────────────────
+function renderToday() {
+  const t = today();
+  const list = document.getElementById('todayList');
+  let html = '';
+
+  CATEGORIES.forEach(cat => {
+    const habits = state.habits.filter(h => h.cat === cat.id && isApplicable(h, t));
+    if (habits.length === 0) return;
+    const doneCount = habits.filter(h => isDone(h.id, t)).length;
+
+    html += `<div class="category-block">
+      <div class="category-header">
+        <span class="cat-icon">${cat.icon}</span>
+        <span class="cat-name">${cat.name}</span>
+        <span class="cat-count">${doneCount}/${habits.length}</span>
+      </div>`;
+
+    habits.forEach(h => {
+      const done = isDone(h.id, t);
+      const hs = habitStreak(h.id);
+      html += `
+      <div class="habit-item ${done ? 'done' : ''}" onclick="toggleHabit('${h.id}')">
+        <div class="check-box ${done ? 'done' : ''}"></div>
+        <div class="habit-text">
+          <div class="habit-name">${h.name}</div>
+          ${h.detail ? `<div class="habit-detail">${h.detail}</div>` : ''}
+          <div class="habit-freq">${freqLabel(h.freq)}</div>
+        </div>
+        <div class="habit-streak-badge ${hs >= 7 ? 'hot' : ''}">${hs > 0 ? hs + '日🔥' : ''}</div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  list.innerHTML = html;
+  updateProgress();
+}
+
+function toggleHabit(id) {
+  const t = today();
+  if (!state.records[t]) state.records[t] = {};
+  state.records[t][id] = !state.records[t][id];
+  saveState();
+  renderToday();
+  updateHeader();
+}
+
+function updateProgress() {
+  const t = today();
+  const habits = state.habits.filter(h => isApplicable(h, t));
+  const done = habits.filter(h => isDone(h.id, t)).length;
+  const pct = habits.length ? Math.round(done / habits.length * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done}/${habits.length}`;
+}
+
+// ─── HEADER ─────────────────────────────────────────────
+function updateHeader() {
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('headerDate').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+  document.getElementById('streakCount').textContent = calcStreak();
+}
+
+// ─── WEEK VIEW ───────────────────────────────────────────
+let weekOffset = 0;
+function shiftWeek(d) { weekOffset += d; renderWeek(); }
+function renderWeek() {
+  const days = getWeekDays(weekOffset);
+  const dayLabels = ['月','火','水','木','金','土','日'];
+  const t = today();
+
+  let title = '';
+  const first = parseDate(days[0]);
+  const last = parseDate(days[6]);
+  title = `${first.getMonth()+1}/${first.getDate()} — ${last.getMonth()+1}/${last.getDate()}`;
+  document.getElementById('weekTitle').textContent = title;
+
+  let html = '<thead><tr><th></th>';
+  days.forEach((d, i) => {
+    const isT = d === t;
+    html += `<th class="${isT ? 'today-col' : ''}">${dayLabels[i]}<br><span style="font-size:9px">${parseDate(d).getDate()}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  CATEGORIES.forEach(cat => {
+    const habits = state.habits.filter(h => h.cat === cat.id);
+    if (!habits.length) return;
+    html += `<tr><td colspan="8" style="padding:8px 0 4px;font-size:10px;color:var(--gold-dim);letter-spacing:.1em">${cat.icon} ${cat.name}</td></tr>`;
+    habits.forEach(h => {
+      html += `<tr><td class="week-habit-label">${h.name}</td>`;
+      days.forEach(d => {
+        const applicable = isApplicable(h, d);
+        const done = isDone(h.id, d);
+        const isFuture = d > t;
+        let cls = 'future';
+        if (!applicable) cls = '';
+        else if (isFuture) cls = `future ${d === t ? 'today-dot' : ''}`;
+        else if (done) cls = 'done';
+        else cls = 'miss';
+        const symbol = done ? '✓' : (!applicable ? '' : (isFuture ? '' : '·'));
+        html += `<td><div class="week-dot ${cls}">${symbol}</div></td>`;
+      });
+      html += '</tr>';
+    });
+  });
+
+  html += '</tbody>';
+  document.getElementById('weekTable').innerHTML = html;
+}
+
+// ─── YEAR VIEW ───────────────────────────────────────────
+function renderYearCatSelect() {
+  const el = document.getElementById('yearCatSelect');
+  el.innerHTML = CATEGORIES.map(c =>
+    `<button class="year-cat-btn ${state.yearCat === c.id ? 'active' : ''}" onclick="setYearCat('${c.id}')">${c.icon} ${c.name}</button>`
+  ).join('');
+}
+function setYearCat(catId) {
+  state.yearCat = catId;
+  renderYearCatSelect();
+  renderYearHeatmaps();
+}
+function renderYearHeatmaps() {
+  const cat = CATEGORIES.find(c => c.id === state.yearCat);
+  const habits = state.habits.filter(h => h.cat === state.yearCat);
+  const el = document.getElementById('yearHeatmaps');
+  if (!habits.length) { el.innerHTML = '<div style="padding:24px;color:var(--text-muted);font-size:13px">習慣がありません</div>'; return; }
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  const startDow = startOfYear.getDay(); // 0=Sun
+  const totalCells = 53 * 7;
+
+  let html = '';
+  habits.forEach(h => {
+    html += `<div class="year-habit-section">
+      <div class="year-habit-title">${h.name}</div>
+      <div class="heatmap">`;
+
+    for (let i = 0; i < totalCells; i++) {
+      const dayOffset = i - (startDow === 0 ? 6 : startDow - 1);
+      const d = new Date(year, 0, 1 + dayOffset);
+      if (d.getFullYear() !== year) {
+        html += `<div class="hm-cell"></div>`;
+        continue;
+      }
+      const ds = fmtDate(d);
+      const done = isDone(h.id, ds);
+      const applicable = isApplicable(h, ds);
+      let cls = '';
+      if (done) cls = 'lv3';
+      else if (!applicable) cls = '';
+      html += `<div class="hm-cell ${cls}" title="${ds}"></div>`;
+    }
+
+    html += '</div>';
+    const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    html += `<div class="hm-month-labels">${months.map(m=>`<span class="hm-month-lbl">${m}</span>`).join('')}</div>`;
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// ─── SETTINGS VIEW ───────────────────────────────────────
+function renderSettings() {
+  const el = document.getElementById('settingsList');
+  let html = '';
+  CATEGORIES.forEach(cat => {
+    const habits = state.habits.filter(h => h.cat === cat.id);
+    html += `<div class="settings-section-title">${cat.icon} ${cat.name}</div>`;
+    habits.forEach(h => {
+      html += `<div class="habit-edit-item">
+        <div class="habit-edit-name">
+          ${h.name}
+          ${h.detail ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;line-height:1.4">${h.detail}</div>` : ''}
+        </div>
+        <div class="habit-edit-freq">${freqLabel(h.freq)}</div>
+        <button class="edit-btn" onclick="openEditModal('${h.id}')">編集</button>
+      </div>`;
+    });
+    html += `<button class="add-habit-btn" onclick="openAddModal('${cat.id}')">＋ ${cat.name}の習慣を追加</button>`;
+  });
+  el.innerHTML = html;
+}
+
+// ─── MODAL ───────────────────────────────────────────────
+let editingHabitId = null;
+function populateCatSelect(selected='') {
+  const el = document.getElementById('modalCat');
+  el.innerHTML = CATEGORIES.map(c =>
+    `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${c.icon} ${c.name}</option>`
+  ).join('');
+}
+function openAddModal(catId='') {
+  editingHabitId = null;
+  document.getElementById('modalTitle').textContent = '新しい習慣を追加';
+  document.getElementById('modalHabitName').value = '';
+  document.getElementById('modalHabitDetail').value = '';
+  document.getElementById('modalDeleteBtn').style.display = 'none';
+  populateCatSelect(catId);
+  document.getElementById('modalFreq').value = 'daily';
+  document.getElementById('habitModal').classList.add('open');
+}
+function openEditModal(id) {
+  const h = state.habits.find(x => x.id === id);
+  if (!h) return;
+  editingHabitId = id;
+  document.getElementById('modalTitle').textContent = '習慣を編集';
+  document.getElementById('modalHabitName').value = h.name;
+  document.getElementById('modalHabitDetail').value = h.detail || '';
+  document.getElementById('modalDeleteBtn').style.display = '';
+  populateCatSelect(h.cat);
+  document.getElementById('modalFreq').value = h.freq;
+  document.getElementById('habitModal').classList.add('open');
+}
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('habitModal')) return;
+  document.getElementById('habitModal').classList.remove('open');
+}
+function saveHabit() {
+  const name = document.getElementById('modalHabitName').value.trim();
+  const detail = document.getElementById('modalHabitDetail').value.trim();
+  const cat = document.getElementById('modalCat').value;
+  const freq = document.getElementById('modalFreq').value;
+  if (!name) { showToast('習慣名を入力してください'); return; }
+  if (editingHabitId) {
+    const h = state.habits.find(x => x.id === editingHabitId);
+    if (h) { h.name = name; h.detail = detail; h.cat = cat; h.freq = freq; }
+  } else {
+    state.habits.push({ id: 'h_' + Date.now(), cat, name, detail, freq });
+  }
+  saveState();
+  document.getElementById('habitModal').classList.remove('open');
+  renderAll();
+  showToast(editingHabitId ? '更新しました' : '追加しました');
+}
+function deleteHabit() {
+  if (!editingHabitId) return;
+  state.habits = state.habits.filter(h => h.id !== editingHabitId);
+  saveState();
+  document.getElementById('habitModal').classList.remove('open');
+  renderAll();
+  showToast('削除しました');
+}
+
+// ─── MED VIEW ────────────────────────────────────────────
+const MED_ITEMS = [
+  { id: 'm1', name: '歯科クリーニング',     icon: '🦷', iconBg: '#2a1f0a', intervalDays: 90,  history: [] },
+  { id: 'm2', name: '耳鼻科（耳掃除）',    icon: '👂', iconBg: '#0a1f15', intervalDays: 180, history: [] },
+  { id: 'm3', name: '皮膚科',              icon: '🧴', iconBg: '#0a1a0a', intervalDays: 180, history: [] },
+  { id: 'm4', name: '眼科',               icon: '👁', iconBg: '#0a1525', intervalDays: 365, history: [] },
+  { id: 'm5', name: '人間ドック・健康診断', icon: '🏥', iconBg: '#1a0a2a', intervalDays: 365, history: [] },
+];
+
+function medLastVisit(item) {
+  if (!item.history || item.history.length === 0) return null;
+  return item.history.slice().sort().pop();
+}
+
+function loadMedState() {
+  try {
+    const s = localStorage.getItem('selfpolish_med_v2');
+    if (s) {
+      const saved = JSON.parse(s);
+      MED_ITEMS.forEach(item => {
+        const found = saved.find(x => x.id === item.id);
+        if (found) {
+          // migrate from old format (lastVisit string)
+          if (found.history) item.history = found.history;
+          else if (found.lastVisit) item.history = [found.lastVisit];
+        }
+      });
+    } else {
+      // try migrating from v1
+      const old = localStorage.getItem('selfpolish_med_v1');
+      if (old) {
+        const saved = JSON.parse(old);
+        MED_ITEMS.forEach(item => {
+          const found = saved.find(x => x.id === item.id);
+          if (found && found.lastVisit) item.history = [found.lastVisit];
+        });
+      }
+    }
+  } catch(e) {}
+}
+
+function saveMedState() {
+  try {
+    localStorage.setItem('selfpolish_med_v2', JSON.stringify(
+      MED_ITEMS.map(x => ({ id: x.id, history: x.history }))
+    ));
+  } catch(e) {}
+}
+
+function medDaysUntil(item) {
+  const last = medLastVisit(item);
+  if (!last) return null;
+  const next = new Date(last);
+  next.setDate(next.getDate() + item.intervalDays);
+  return Math.round((next - new Date()) / 86400000);
+}
+
+function medNextDate(item) {
+  const last = medLastVisit(item);
+  if (!last) return '未設定';
+  const next = new Date(last);
+  next.setDate(next.getDate() + item.intervalDays);
+  return `${next.getFullYear()}/${String(next.getMonth()+1).padStart(2,'0')}/${String(next.getDate()).padStart(2,'0')}`;
+}
+
+function medStatus(days) {
+  if (days === null) return 'none';
+  if (days < 0)  return 'over';
+  if (days <= 30) return 'warn';
+  return 'ok';
+}
+
+function renderMed() {
+  const el = document.getElementById('medView');
+
+  let okCount = 0, warnCount = 0, overCount = 0;
+  MED_ITEMS.forEach(item => {
+    const s = medStatus(medDaysUntil(item));
+    if (s === 'ok') okCount++;
+    else if (s === 'warn') warnCount++;
+    else if (s === 'over' || s === 'none') overCount++;
+  });
+
+  let html = `
+  <div class="med-summary">
+    <div class="med-metric"><div class="med-metric-label">管理項目</div><div class="med-metric-value">${MED_ITEMS.length}</div></div>
+    <div class="med-metric"><div class="med-metric-label">要対応</div><div class="med-metric-value ${warnCount>0?'warn':''}">${warnCount}</div></div>
+    <div class="med-metric"><div class="med-metric-label">期限超過</div><div class="med-metric-value ${overCount>0?'danger':''}">${overCount}</div></div>
+  </div>
+  <div class="med-legend">
+    <div class="med-legend-item"><div class="med-legend-dot" style="background:#4a7c5a"></div>余裕あり</div>
+    <div class="med-legend-item"><div class="med-legend-dot" style="background:#c9a84c"></div>30日以内</div>
+    <div class="med-legend-item"><div class="med-legend-dot" style="background:#b05050"></div>期限超過</div>
+  </div>
+  <div class="med-cards">`;
+
+  MED_ITEMS.forEach(item => {
+    const days = medDaysUntil(item);
+    const st = medStatus(days);
+    const barCls  = st === 'ok' ? 'bar-ok' : st === 'warn' ? 'bar-warn' : 'bar-over';
+    const daysCls = st === 'ok' ? 'days-ok' : st === 'warn' ? 'days-warn' : 'days-over';
+    const daysStr = days === null ? '未設定' : days < 0 ? `${Math.abs(days)}日超過` : `あと ${days}日`;
+    const nextStr = medNextDate(item);
+    const last = medLastVisit(item);
+    const lastStr = last ? `前回：${last.replace(/-/g,'/')}` : '前回：未記録';
+    const intervalLabel = item.intervalDays === 90 ? '3ヶ月' : item.intervalDays === 180 ? '6ヶ月' : '1年';
+
+    html += `
+    <div class="med-card">
+      <div class="med-status-bar ${barCls}"></div>
+      <div class="med-icon" style="background:${item.iconBg}">${item.icon}</div>
+      <div class="med-card-body">
+        <div class="med-card-name">${item.name}</div>
+        <div class="med-card-meta">${intervalLabel}ごと ／ ${lastStr}</div>
+      </div>
+      <div class="med-card-right">
+        <div class="med-days ${daysCls}">${daysStr}</div>
+        <div class="med-next">次回：${nextStr}</div>
+        <button class="med-done-btn" onclick="openMedModal('${item.id}')">受診済みを記録</button>
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  // ── INTERVAL BAR ──
+  html += `
+  <div class="med-timeline-section">
+    <div class="med-tl-title">CYCLE</div>
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:12px;letter-spacing:0.04em">今サイクルのどこにいるか（左＝前回受診 → 右＝次回予定）</div>`;
+
+  MED_ITEMS.forEach(item => {
+    const days = medDaysUntil(item);
+    const st = medStatus(days);
+    const elapsed = days === null ? 0 : Math.max(0, item.intervalDays - days);
+    const pct = days === null ? 0 : Math.min(Math.round(elapsed / item.intervalDays * 100), 100);
+    const fillCls = st === 'ok' ? 'tl-ok' : st === 'warn' ? 'tl-warn' : 'tl-over';
+    const daysLabel = days === null ? '未設定' : days < 0 ? `${Math.abs(days)}日超過` : `残${days}日`;
+    const nextStr = medNextDate(item);
+    html += `
+    <div class="med-tl-row">
+      <div class="med-tl-label">${item.icon} ${item.name}</div>
+      <div class="med-tl-bar-wrap">
+        <div class="med-tl-fill ${fillCls}" style="width:${Math.max(pct,4)}%"></div>
+        <div class="med-tl-date">${daysLabel} → ${nextStr}</div>
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  // ── HISTORY DOTS (年間ドット) ──
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const years = [];
+  // collect all years from history
+  MED_ITEMS.forEach(item => {
+    item.history.forEach(d => {
+      const y = parseInt(d.split('-')[0]);
+      if (!years.includes(y)) years.push(y);
+    });
+  });
+  if (!years.includes(currentYear)) years.push(currentYear);
+  years.sort((a,b) => b - a); // newest first
+
+  const MONTHS = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+
+  html += `
+  <div class="med-history-section">
+    <div class="med-tl-title" style="margin-top:28px">HISTORY</div>
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:14px;letter-spacing:0.04em">過去の受診記録（月ごと）</div>`;
+
+  years.forEach(year => {
+    html += `
+    <div style="margin-bottom:18px">
+      <div style="font-size:10px;color:var(--gold-dim);letter-spacing:0.1em;margin-bottom:8px">${year}</div>
+      <div class="med-dot-grid">
+        <div class="med-dot-row-header">
+          <div class="med-dot-item-label"></div>`;
+    MONTHS.forEach(m => {
+      const isCurrent = year === currentYear && parseInt(m) === now.getMonth()+1;
+      html += `<div class="med-dot-month ${isCurrent?'med-dot-month-current':''}">${m}</div>`;
+    });
+    html += `</div>`;
+
+    MED_ITEMS.forEach(item => {
+      html += `<div class="med-dot-row">
+        <div class="med-dot-item-label">${item.icon}</div>`;
+      MONTHS.forEach(m => {
+        const monthStr = String(m).padStart(2,'0');
+        const visited = item.history.some(d => {
+          const [y, mo] = d.split('-');
+          return parseInt(y) === year && mo === monthStr;
+        });
+        const isFuture = year > currentYear || (year === currentYear && parseInt(m) > now.getMonth()+1);
+        let dotCls = 'med-dot-empty';
+        if (visited) dotCls = 'med-dot-done';
+        else if (isFuture) dotCls = 'med-dot-future';
+        html += `<div class="med-dot-cell"><div class="${dotCls}"></div></div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+// Med modal
+let currentMedId = null;
+function openMedModal(id) {
+  currentMedId = id;
+  const item = MED_ITEMS.find(x => x.id === id);
+  document.getElementById('medModalTitle').textContent = `受診日を記録 — ${item.name}`;
+  document.getElementById('medModalDate').value = fmtDate(new Date());
+  document.getElementById('medModal').classList.add('open');
+}
+function closeMedModal(e) {
+  if (e && e.target !== document.getElementById('medModal')) return;
+  document.getElementById('medModal').classList.remove('open');
+}
+function saveMedVisit() {
+  const dateVal = document.getElementById('medModalDate').value;
+  if (!dateVal) { showToast('日付を選択してください'); return; }
+  const item = MED_ITEMS.find(x => x.id === currentMedId);
+  if (item) {
+    if (!item.history) item.history = [];
+    if (!item.history.includes(dateVal)) item.history.push(dateVal);
+    item.history.sort();
+  }
+  saveMedState();
+  document.getElementById('medModal').classList.remove('open');
+  renderMed();
+  showToast('受診日を記録しました');
+}
+
+// ─── TABS ────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'week') renderWeek();
+  if (name === 'year') { renderYearCatSelect(); renderYearHeatmaps(); }
+  if (name === 'settings') renderSettings();
+  if (name === 'med') renderMed();
+}
+
+// ─── TOAST ───────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── MISC ────────────────────────────────────────────────
+function freqLabel(f) {
+  if (f === 'weekday') return '平日のみ';
+  if (f === 'weekend') return '週末のみ';
+  return '毎日';
+}
+
+function renderAll() {
+  renderToday();
+  updateHeader();
+}
+
+// ─── INIT ────────────────────────────────────────────────
+loadMedState();
+renderAll();
+</script>
+</body>
+</html>
