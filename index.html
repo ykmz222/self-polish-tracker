@@ -651,6 +651,56 @@
     animation: slideUp 0.25s ease;
   }
 
+  /* ── MILESTONE MODAL ── */
+  .ms-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .ms-overlay.open { display: flex; }
+  .ms-box {
+    text-align: center; padding: 40px 32px;
+    animation: msPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    max-width: 320px;
+  }
+  @keyframes msPop {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .ms-emoji { font-size: 64px; display: block; margin-bottom: 16px; animation: msBounce 0.6s ease 0.3s both; }
+  @keyframes msBounce {
+    0%,100% { transform: translateY(0); }
+    40%     { transform: translateY(-18px); }
+    70%     { transform: translateY(-8px); }
+  }
+  .ms-days {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 56px; font-weight: 300;
+    color: var(--gold); line-height: 1; margin-bottom: 8px;
+  }
+  .ms-unit { font-size: 14px; color: var(--text-muted); letter-spacing: 0.15em; margin-bottom: 16px; }
+  .ms-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 300;
+    color: var(--text); margin-bottom: 8px; letter-spacing: 0.05em;
+  }
+  .ms-msg { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 28px; }
+  .ms-close {
+    background: none; border: 1px solid var(--gold-dim);
+    color: var(--gold); padding: 10px 28px;
+    border-radius: 20px; font-size: 12px;
+    letter-spacing: 0.15em; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ms-close:active { background: rgba(201,168,76,0.1); }
+
+  /* confetti canvas */
+  #msCanvas {
+    position: fixed; inset: 0; z-index: 199;
+    pointer-events: none; display: none;
+  }
+
   /* Scroll handle */
   .pill {
     width: 36px; height: 3px; background: var(--border);
@@ -758,6 +808,21 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- CONFETTI CANVAS -->
+<canvas id="msCanvas"></canvas>
+
+<!-- MILESTONE MODAL -->
+<div class="ms-overlay" id="msOverlay" onclick="closeMilestone()">
+  <div class="ms-box" onclick="event.stopPropagation()">
+    <span class="ms-emoji" id="msEmoji">🎉</span>
+    <div class="ms-days" id="msDays">7</div>
+    <div class="ms-unit">DAY STREAK</div>
+    <div class="ms-title" id="msTitle">1週間突破！</div>
+    <div class="ms-msg" id="msMsg">継続は力なり。<br>この調子で積み上げよう。</div>
+    <button class="ms-close" onclick="closeMilestone()">続ける</button>
+  </div>
+</div>
+
 <!-- MODAL: Med visit done -->
 <div class="med-modal-overlay" id="medModal" onclick="closeMedModal(event)">
   <div class="med-modal">
@@ -774,14 +839,20 @@
 <script>
 // ─── DATA ───────────────────────────────────────────────
 const CATEGORIES = [
-  { id: 'posture',  name: '姿勢',  icon: '🧍' },
-  { id: 'core',     name: '体幹',  icon: '🔥' },
-  { id: 'fashion',  name: '服装',  icon: '👔' },
-  { id: 'strength', name: '筋力',  icon: '💪' },
-  { id: 'beauty',   name: '美容',  icon: '✨' },
+  { id: 'sairoku',  name: '苦手なこと（司禄星）', icon: '🟤' },
+  { id: 'posture',  name: '姿勢',              icon: '🧍' },
+  { id: 'core',     name: '体幹',              icon: '🔥' },
+  { id: 'fashion',  name: '服装',              icon: '👔' },
+  { id: 'strength', name: '筋力',              icon: '💪' },
+  { id: 'beauty',   name: '美容',              icon: '✨' },
 ];
 
 const DEFAULT_HABITS = [
+  // 🟤 苦手なこと（司禄星）
+  { id: 'h19', cat: 'sairoku',  name: 'SPIFUL毎日15分間&Claudeロープレをやる', detail: '英会話による言語力の向上 ／ ご縁を頂いたお役目を成し遂げる', freq: 'daily' },
+  { id: 'h20', cat: 'sairoku',  name: 'PLBS設定予算を淡々とやる',             detail: '資産管理力の向上 ／ 夢と目標を具現化して体験する', freq: 'weekend' },
+  { id: 'h21', cat: 'sairoku',  name: 'トレード実戦練習を楽しくやる',         detail: 'トレード継続力の向上 ／ 平均月利10%プロの投資家で在る', freq: 'weekend' },
+  { id: 'h22', cat: 'sairoku',  name: '運動による心技体の向上',               detail: '人生の"旅"をアクティブに楽しむ', freq: 'daily' },
   // 🧍 姿勢
   { id: 'h1',  cat: 'posture',  name: '壁立ち5点チェック',            detail: '後頭部・両肩・お尻・かかとを壁に付けて1〜2分キープ', freq: 'daily' },
   { id: 'h2',  cat: 'posture',  name: '肩甲骨タオル上げ下げ',         detail: 'タオルを肩幅で持ち頭の後ろを通す×10回 ／ 約2分', freq: 'daily' },
@@ -942,6 +1013,11 @@ function toggleHabit(id) {
   saveState();
   renderToday();
   updateHeader();
+  // マイルストーンチェック（チェックを入れたときのみ）
+  if (state.records[t][id]) {
+    const streak = calcStreak();
+    checkMilestone(streak);
+  }
 }
 
 function updateProgress() {
@@ -1380,6 +1456,95 @@ function saveMedVisit() {
   document.getElementById('medModal').classList.remove('open');
   renderMed();
   showToast('受診日を記録しました');
+}
+
+// ─── MILESTONE ───────────────────────────────────────────
+const MILESTONES = [
+  { days: 3,   emoji: '🌱', title: '3日間達成！',      msg: '小さな一歩が大きな変化を生む。\nその芽を大切に育てよう。' },
+  { days: 7,   emoji: '⭐️', title: '1週間突破！',      msg: '7日間、自分との約束を守り抜いた。\n本物の習慣が始まっている。' },
+  { days: 14,  emoji: '🔥', title: '2週間継続！',      msg: '脳が「これが日常だ」と認識し始める。\n変化は静かに、確実に起きている。' },
+  { days: 21,  emoji: '💡', title: '21日達成！',       msg: '習慣の芽が根を張った。\nここからが本当のスタートライン。' },
+  { days: 30,  emoji: '🏅', title: '1ヶ月突破！',      msg: '30日間、自分を磨き続けた。\nその積み重ねは誰にも奪えない財産だ。' },
+  { days: 50,  emoji: '🚀', title: '50日到達！',       msg: '半分は習慣になっている。\n残りは惰性ではなく、選択で続けている。' },
+  { days: 66,  emoji: '💎', title: '66日——習慣定着！', msg: '科学が証明する習慣定着の日。\n今日から、これはあなたの一部だ。' },
+  { days: 90,  emoji: '👑', title: '90日——自動化！',   msg: '考える前に体が動く領域へ。\n3ヶ月前の自分とは別人になっている。' },
+  { days: 180, emoji: '🌟', title: '半年突破！',       msg: '180日間、諦めなかった。\nオーラはすでに変わっている。' },
+  { days: 365, emoji: '🏆', title: '1年——伝説！',      msg: '365日、毎日自分と向き合い続けた。\nこれはもう、生き方そのものだ。' },
+];
+
+function checkMilestone(streak) {
+  const ms = MILESTONES.find(m => m.days === streak);
+  if (!ms) return;
+  // check if already shown
+  const shown = JSON.parse(localStorage.getItem('selfpolish_ms') || '[]');
+  if (shown.includes(streak)) return;
+  shown.push(streak);
+  localStorage.setItem('selfpolish_ms', JSON.stringify(shown));
+  showMilestone(streak, ms);
+}
+
+function showMilestone(days, ms) {
+  document.getElementById('msEmoji').textContent = ms.emoji;
+  document.getElementById('msDays').textContent = days;
+  document.getElementById('msTitle').textContent = ms.title;
+  document.getElementById('msMsg').innerHTML = ms.msg.replace(/\n/g, '<br>');
+  document.getElementById('msOverlay').classList.add('open');
+  launchConfetti();
+}
+
+function closeMilestone() {
+  document.getElementById('msOverlay').classList.remove('open');
+  stopConfetti();
+}
+
+// ── CONFETTI ──
+let confettiAnim = null;
+const CONFETTI_COLORS = ['#c9a84c','#6db380','#e8e4dc','#4a7c5a','#b05050','#7a6330'];
+
+function launchConfetti() {
+  const canvas = document.getElementById('msCanvas');
+  canvas.style.display = 'block';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const pieces = Array.from({length: 80}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height - canvas.height,
+    w: Math.random() * 8 + 4,
+    h: Math.random() * 4 + 2,
+    color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+    rot: Math.random() * Math.PI * 2,
+    vx: (Math.random() - 0.5) * 2,
+    vy: Math.random() * 3 + 1.5,
+    vr: (Math.random() - 0.5) * 0.15,
+  }));
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - frame / 180);
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+    });
+    frame++;
+    if (frame < 200) confettiAnim = requestAnimationFrame(draw);
+    else stopConfetti();
+  }
+  if (confettiAnim) cancelAnimationFrame(confettiAnim);
+  draw();
+}
+
+function stopConfetti() {
+  if (confettiAnim) { cancelAnimationFrame(confettiAnim); confettiAnim = null; }
+  const canvas = document.getElementById('msCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.style.display = 'none';
 }
 
 // ─── TABS ────────────────────────────────────────────────
